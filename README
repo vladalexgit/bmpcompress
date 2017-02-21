@@ -1,0 +1,67 @@
+Quadtree Compression - comprimare imagini BMP patrate cu ajutorul arborilor cuaternari
+
+	Fisiere necesare:
+
+	- bmp_handling.c, bmp_handling.h 
+		- functii parsare metadate fisiere .bmp
+
+	- pixel_array_operations.c, pixel_array_operations.h 
+		- functii ce opereaza cu matrice de pixeli
+		EX: creare matrice din fisier .bmp, impartire matrice in 4 zone, etc.
+
+	- quadtree_operations.c quadtree_operations.h 
+		- functii ce modeleaza un arbore cuaternar
+		EX: creare, parcurgere, stergere, etc.
+
+	- main.c
+		- implementarea propriu-zisa a motorului de compresie
+	
+	- compression_helpers.c compression_helpers.h
+		- functii aditionale ale motorului de compresie + BONUS
+	
+	- Makefile 
+		- programul poate fi compilat utilizand comanda make
+
+	Legenda comenzi:
+
+	- compresie: ./quadtree -c [fişier_intrare] [fişier_ieşire]
+	
+	- decompresie: ./quadtree -d [fişier_intrare] [fişier_ieşire]
+	
+	- rotire in sens trigonometric: ./quadtree -r [nr_rotatii] [fişier_intrare] [fişier_ieşire]
+	
+	- bonus (imaginea asociata celui mai mic sub-arbore care contine 2 culori specificate):
+		./quadtree -b r1 g1 b1 r2 g2 b2 [fişier_intrare] [fişier_ieşire]
+		(unde r1, g1, b1 = prima culoare si r2, g2, b2 = a doua culoare) 
+
+	Implementare:
+
+	- programul porneste prin a citi metadatele fisierului .bmp de intrare, utilizand functii din bibiloteca bmp_handling.h
+
+	- in cazul in care a fost ceruta compresia fisierului de intrare, se copiaza aceste metadate in noul fisier, se citeste matricea de pixeli (1) din fisierul de intrare, uitlizand functia get_next_pixel (2) , apoi se formeaza recursiv arborele cuaternar impartind matricea in 4 zone (utilizand functii din pixel_array_opperations.h), acesta este in continuare parcurs cu ajutorul functiei bfs (din quadtree_opperations.h), iar rezultatul parcurgerii este scris in fisierul de iesire (comprimat)
+
+	(1) - "matricea" de pixeli este de fapt construita in memorie sub forma sa vectorizata, astfel programul fiind optimizat pentru consum mic de memorie, insa vor fi necesare operatii mai complicate de parcurgere a acesteia
+	(2) - functia get_next_pixel din pixel_array_opperations.h functioneaza similar cu functia strtok din string.h. Aceasta va citi primul pixel din fisierul primit ca parametru, apoi va trebui apelata cu valoarea NULL pentru a citi urmatorii pixeli din acelasi fisier.
+
+	- in cazul in care se cere decompresia fisierului de intrare, se inverseaza functionarea compresiei astfel: se copiaza metadatele din fisierul comprimat in cel decomprimat, se reconstruieste arborele in memorie utilizand forma sa comprimata, apoi se reconstruieste matricea de pixeli plin umplerea zonelor descrise de catre nodurile arborelui (compression_helpers.h/fill_array), matricea este apoi scrisa in fisierul de iesire
+
+	- in cazul in care se cere rotirea unei imagini: se copiaza metadatele din fisierul de intrare in cel de iesire, se construieste arborele ce caracterizeaza imaginea (similar compresiei), apoi se modifica legaturile acestuia in asa fel incat noua imagine sa fie rotita cu 90 de grade in sens trigonometric, apoi se creeaza imaginea de output similar decompresiei
+
+	- pentru bonus, se va determina cel mai apropiat stramos comun a doua culori primite ca parametru
+	- astfel: se citeste imaginea initiala, se construieste arborele cuaternar asociat acesteia, apoi se apeleaza functia find_ancestor (3) (compression_helpers.h) care va returna adresa nodului ce reprezinta stramosul cautat; dupa acest pas se va scrie in fisierul de iesire imaginea descrisa de catre nodul stramos
+
+	(3) - functia find_ancestor functioneaza recursiv, astfel:
+			
+			- daca nodul curent contine una dintre culorile cautate si este frunza returneaza nodul curent
+			
+			- altfel:
+			
+				- pointerii q1,q2,q3,q4 vor fi egali cu rezultatul rularii functiei pe cei 4 copii ai nodului curent
+			
+				- daca nodul curent contine in minim 2 dintre sub-arborii sai culorile respective returnam nodul curent (rezultat care se va propaga catre prima iteratie a functiei)
+			
+				- altfel altfel daca exista un sub-arbore ce indeplineste conditiile de pana acum il vom returna pe acesta pentru a fi comparat mai departe de catre iteratia precedenta a functiei (propagarea mentionata mai sus)
+
+				- in cazul in care subarborii nodului curent nu indeplinesc conditia va fi returnata valoarea NULL
+
+		- daca nodul cautat este gasit functia va returna adresa acestuia, in caz contrar valoarea NULL

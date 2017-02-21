@@ -1,2 +1,0 @@
-# bmpcompress
-bmpcompress
